@@ -1,0 +1,187 @@
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+    --background-color: #ecf0f1;
+    --text-color: #2c3e50;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1rem;
+    text-align: center;
+}
+
+nav {
+    margin-top: 1rem;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    margin: 0 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+nav a.active {
+    background-color: var(--secondary-color);
+}
+
+main {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+section {
+    display: none;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+section.active {
+    display: block;
+    animation: fadeIn 0.5s ease;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+button {
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+}
+
+th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.estado-competencia {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+#reloj {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.descalificado {
+    color: var(--accent-color);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.controles {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+tr:not(.descalificado) td {
+    transition: background-color 0.3s ease;
+}
+
+tr:not(.descalificado) td:nth-child(n+6) {
+    background-color: #f8f9fa;
+}
+
+tr:hover:not(.descalificado) td {
+    background-color: #e9ecef;
+}
+
+/* Añadir al final del CSS */
+#btn-resultados-finales {
+    margin: 1rem auto;
+    display: block;
+    background-color: var(--secondary-color);
+}
+
+#btn-resultados-finales:hover {
+    background-color: var(--secondary-color);
+}
+
+.ventana-resultados {
+    padding: 20px;
+    font-family: inherit;
+}
+
+.ventana-resultados table {
+    margin: 1rem 0;
+}
+
+.hidden{
+    display: none;
+}
+
+/* Añadir al final del CSS */
+.descalificado td:last-child {
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+#tabla-competencia td:nth-child(10) {
+    text-align: right;
+    padding-right: 20px;
+}
+#tabla-competencia td {
+    white-space: nowrap;
+}
