@@ -4,25 +4,58 @@ class Triatlon {
   constructor() {
     this.participantes = [];
     this.competidores = [];
+    this.asistentes = [];
     this.tiempoActual = null;
     this.intervaloID = null;
     this.etapaActual = "";
 
     this.initEventListeners();
   }
+  actualizarEstadoBotones() {
+    const asistenciaLink = document.getElementById("asistencia-link");
+    const competenciaLink = document.getElementById("competencia-link");
+    const iniciarBtn = document.getElementById("iniciar-competencia");
 
+    // Habilitar/deshabilitar botones de navegación
+    asistenciaLink.classList.toggle("disabled", this.participantes.length < 1);
+    competenciaLink.classList.toggle("disabled", this.asistentes.length < 2);
+
+    // Habilitar/deshabilitar botón de iniciar competencia
+    iniciarBtn.disabled = this.asistentes.length < 2;
+  }
   initEventListeners() {
     document
       .getElementById("registro-link")
       .addEventListener("click", () => this.mostrarSeccion("registro"));
     document
+      .getElementById("asistencia-link")
+      .addEventListener("click", (e) => {
+        if (this.participantes.length < 1) {
+          e.preventDefault();
+          return;
+        }
+        this.mostrarSeccion("asistencia");
+      });
+
+    document
       .getElementById("competencia-link")
-      .addEventListener("click", () => this.mostrarSeccion("competencia"));
+      .addEventListener("click", (e) => {
+        if (this.asistentes.length < 2) {
+          e.preventDefault();
+          return;
+        }
+        this.mostrarSeccion("competencia");
+      });
 
     document.getElementById("registro-form").addEventListener("submit", (e) => {
       e.preventDefault();
       this.registrarParticipante();
     });
+
+    // Asistencia
+    document
+      .getElementById("marcar-asistencia")
+      .addEventListener("click", () => this.marcarAsistencia());
 
     document
       .getElementById("iniciar-competencia")
@@ -36,10 +69,17 @@ class Triatlon {
     document
       .querySelectorAll("nav a")
       .forEach((a) => a.classList.remove("active"));
-    document.getElementById(seccion).classList.add("active");
-    document.getElementById(`${seccion}-link`).classList.add("active");
-  }
 
+    document.getElementById(seccion).classList.add("active");
+    if (seccion === "registro") {
+      document.getElementById("registro-link").classList.add("active");
+    } else if (seccion === "asistencia") {
+      document.getElementById("asistencia-link").classList.add("active");
+      this.actualizarTablasAsistencia();
+    } else if (seccion === "competencia") {
+      document.getElementById("competencia-link").classList.add("active");
+    }
+  }
   registrarParticipante() {
     const participante = {
       cedula: document.getElementById("cedula").value,
@@ -47,6 +87,19 @@ class Triatlon {
       municipio: document.getElementById("municipio").value,
       edad: parseInt(document.getElementById("edad").value),
     };
+
+    // Validar cédula (8 dígitos numéricos)
+    if (!/^\d{8}$/.test(participante.cedula)) {
+      alert("La cédula debe tener 8 dígitos numéricos");
+      return;
+    }
+
+    // Validar edad (entre 10 y 120)
+    const edad = participante.edad;
+    if (isNaN(edad) || edad < 10 || edad > 88) {
+      alert("La edad debe ser un número entre 10 y 120 años");
+      return;
+    }
 
     if (this.participantes.some((p) => p.cedula === participante.cedula)) {
       alert("Ya existe un participante con esa cédula");
@@ -56,6 +109,7 @@ class Triatlon {
     this.participantes.push(participante);
     this.actualizarTablaRegistrados();
     document.getElementById("registro-form").reset();
+    this.actualizarEstadoBotones();
   }
 
   actualizarTablaRegistrados() {
@@ -74,7 +128,69 @@ class Triatlon {
     });
   }
 
+  marcarAsistencia() {
+    const cedula = document.getElementById("buscar-cedula").value;
+    const participante = this.participantes.find((p) => p.cedula === cedula);
+
+    if (!/^\d{8}$/.test(cedula)) {
+      alert("La cédula debe tener exactamente 8 dígitos numéricos");
+      return;
+    }
+
+    if (!participante) {
+      alert("No se encontró un participante registrado con esa cédula");
+      return;
+    }
+
+    if (this.asistentes.some((a) => a.cedula === cedula)) {
+      alert("Este participante ya fue marcado como presente");
+      return;
+    }
+
+    this.asistentes.push(participante);
+    this.actualizarTablasAsistencia();
+    document.getElementById("buscar-cedula").value = "";
+    this.actualizarEstadoBotones();
+  }
+
+  actualizarTablasAsistencia() {
+    // Actualizar tabla de por asistir
+    const porAsistir = this.participantes.filter(
+      (p) => !this.asistentes.some((a) => a.cedula === p.cedula)
+    );
+
+    const tbodyPorAsistir = document.querySelector("#tabla-por-asistir tbody");
+    tbodyPorAsistir.innerHTML = "";
+    porAsistir.forEach((p) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+            <td>${p.cedula}</td>
+            <td>${p.nombre}</td>
+            <td>${p.municipio}</td>
+            <td>${p.edad}</td>
+        `;
+      tbodyPorAsistir.appendChild(tr);
+    });
+
+    // Actualizar tabla de asistentes
+    const tbodyAsistentes = document.querySelector("#tabla-asistentes tbody");
+    tbodyAsistentes.innerHTML = "";
+    this.asistentes.forEach((p) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+            <td>${p.cedula}</td>
+            <td>${p.nombre}</td>
+            <td>${p.municipio}</td>
+            <td>${p.edad}</td>
+        `;
+      tbodyAsistentes.appendChild(tr);
+    });
+  }
   iniciarCompetencia() {
+    if (this.asistentes.length < 2) {
+      alert("No hay participantes presentes para iniciar la competencia");
+      return;
+    }
     const horaInicio = document.getElementById("hora-inicio").value;
     if (!horaInicio) {
       alert("Por favor ingrese la hora de inicio");
@@ -89,7 +205,20 @@ class Triatlon {
       parseInt(segundos)
     );
 
-    this.competidores = this.participantes.map((p) => ({
+    /* this.competidores = this.participantes.map((p) => ({
+      ...p,
+      distanciaActual: 0,
+      distanciaTotal: 0,
+      etapa: "CAMINATA",
+      tiempos: {
+        CAMINATA: { inicio: horaInicio, fin: null },
+        NATACION: { inicio: null, fin: null },
+        CICLISMO: { inicio: null, fin: null },
+      },
+      descalificado: false,
+    })); */
+
+    this.competidores = this.asistentes.map((p) => ({
       ...p,
       distanciaActual: 0,
       distanciaTotal: 0,
@@ -187,78 +316,6 @@ class Triatlon {
     competidor.distanciaActual = 0;
     this.actualizarTablaCompetencia(); // Actualización inmediata
   }
-  /* mostrarResultadosFinales() {
-    const competidoresFinales = this.competidores
-      .filter((c) => c.tiempos.CICLISMO.fin)
-      .sort((a, b) => {
-        const tiempoA = new Date(`1970-01-01T${a.tiempos.CICLISMO.fin}`);
-        const tiempoB = new Date(`1970-01-01T${b.tiempos.CICLISMO.fin}`);
-        return tiempoA - tiempoB;
-      });
-
-    const descalificados = this.competidores.filter((c) => c.descalificado);
-    docuemnt.getElementById("tabla-competencia").classList.add("hidden");
-    const table = document.createElement("table");
-    document.write(`
-        <html>
-            <head>
-                <title>Resultados Finales Triatlón</title>
-                <style>${document.querySelector("style").innerHTML}</style>
-            </head>
-            <body class="ventana-resultados">
-                <h2>Resultados Finales del Triatlón</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Posición</th>
-                            <th>Nombre</th>
-                            <th>Cédula</th>
-                            <th>Tiempo Caminata</th>
-                            <th>Tiempo Natación</th>
-                            <th>Tiempo Ciclismo</th>
-                            <th>Tiempo Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${competidoresFinales
-                          .map(
-                            (c, index) => `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${c.nombre}</td>
-                                <td>${c.cedula}</td>
-                                <td>${c.tiempos.CAMINATA.inicio} - ${
-                              c.tiempos.CAMINATA.fin
-                            }</td>
-                                <td>${c.tiempos.NATACION.inicio} - ${
-                              c.tiempos.NATACION.fin
-                            }</td>
-                                <td>${c.tiempos.CICLISMO.inicio} - ${
-                              c.tiempos.CICLISMO.fin
-                            }</td>
-                                <td>${c.tiempos.CICLISMO.fin}</td>
-                            </tr>
-                        `
-                          )
-                          .join("")}
-                        ${descalificados
-                          .map(
-                            (c) => `
-                            <tr class="descalificado">
-                                <td>-</td>
-                                <td>${c.nombre}</td>
-                                <td>${c.cedula}</td>
-                                <td colspan="4">DESCALIFICADO</td>
-                            </tr>
-                        `
-                          )
-                          .join("")}
-                    </tbody>
-                </table>
-            </body>
-        </html>
-    `);
-  } */
 
   actualizarTablaCompetencia() {
     const tbody = document.querySelector("#tabla-competencia tbody");

@@ -12,6 +12,7 @@
         <h1>Triatlón La Cava</h1>
         <nav>
             <a href="#" class="active" id="registro-link">Registro</a>
+            <a href="#" id="asistencia-link">Asistencia</a>
             <a href="#" id="competencia-link">Competencia</a>
         </nav>
     </header>
@@ -22,7 +23,8 @@
             <form id="registro-form">
                 <div class="form-group">
                     <label for="cedula">Cédula:</label>
-                    <input type="text" id="cedula" required>
+                    <input type="text" id="cedula" pattern="\d{8}" minlength="8" maxlength="8" inputmode="numeric"
+                        oninput="this.value = this.value.replace(/\D/g, '')" required>
                 </div>
                 <div class="form-group">
                     <label for="nombre">Nombre:</label>
@@ -34,7 +36,8 @@
                 </div>
                 <div class="form-group">
                     <label for="edad">Edad:</label>
-                    <input type="number" id="edad" required min="18">
+                    <input type="text" id="edad" pattern="\d{1,2}" maxlength="2" inputmode="numeric"
+                        oninput="this.value = this.value.replace(/\D/g, '')" required>
                 </div>
                 <button type="submit">Registrar</button>
             </form>
@@ -54,12 +57,55 @@
             </div>
         </section>
 
-        <section id="competencia">
-            <h2>Competencia en Curso</h2>
-            <div class="controles">
-                <input type="time" id="hora-inicio" step="1" required>
-                <button id="iniciar-competencia">Iniciar Competencia</button>
+        <section id="asistencia">
+            <h2>Verificación de Asistencia</h2>
+            <div class="form-group">
+                <label for="buscar-cedula">Buscar por Cédula:</label>
+                <input type="text" id="buscar-cedula" placeholder="Ingrese la cédula" pattern="\d{8}" maxlength="8"
+                    inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '')" required>
+                <button id="marcar-asistencia">Marcar Asistencia</button>
             </div>
+            <div class="asistencia-tablas">
+                <div class="tabla-container">
+                    <h3>Participantes Registrados</h3>
+                    <table id="tabla-por-asistir">
+                        <thead>
+                            <tr>
+                                <th>Cédula</th>
+                                <th>Nombre</th>
+                                <th>Municipio</th>
+                                <th>Edad</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="tabla-container">
+                    <h3>Participantes Presentes</h3>
+                    <table id="tabla-asistentes">
+                        <thead>
+                            <tr>
+                                <th>Cédula</th>
+                                <th>Nombre</th>
+                                <th>Municipio</th>
+                                <th>Edad</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="competencia">
+            <div class="input-container">
+                <h2>Competencia en Curso</h2>
+                <div class="controles">
+                    <input type="time" id="hora-inicio" step="1" required>
+                    <button id="iniciar-competencia">Iniciar Competencia</button>
+                </div>
+            </div>
+
             <div class="estado-competencia">
                 <div id="reloj">00:00:00</div>
                 <div id="etapa-actual">Esperando inicio...</div>
