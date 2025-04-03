@@ -8,6 +8,8 @@ class Triatlon {
     this.tiempoActual = null;
     this.intervaloID = null;
     this.etapaActual = "";
+    this.horaInicio = null;
+    this.simulacionRapida = false;
 
     this.initEventListeners();
   }
@@ -24,6 +26,7 @@ class Triatlon {
     iniciarBtn.disabled = this.asistentes.length < 2;
   }
   initEventListeners() {
+    //Seccion de activacion de las pestañas de navegacion para que habiliten la vista si se cumplen ciertas condiciones para que no vaya a ellas sin haber puesto algun registro
     document
       .getElementById("registro-link")
       .addEventListener("click", () => this.mostrarSeccion("registro"));
@@ -47,6 +50,7 @@ class Triatlon {
         this.mostrarSeccion("competencia");
       });
 
+    //Registro de participantes
     document.getElementById("registro-form").addEventListener("submit", (e) => {
       e.preventDefault();
       this.registrarParticipante();
@@ -58,8 +62,40 @@ class Triatlon {
       .addEventListener("click", () => this.marcarAsistencia());
 
     document
+      .getElementById("buscar-cedula")
+      .addEventListener("keydown", (e) => {
+        if (e.key === "Enter") this.marcarAsistencia();
+      });
+
+    document
+      .getElementById("llenado-automatico")
+      .addEventListener("click", () => {
+        this.llenadoAutomaticoAsistencia();
+      });
+
+    document
+      .getElementById("remover-automatico")
+      .addEventListener("click", () => {
+        this.removerAutomaticoAsistencia();
+      });
+    // Competencia
+    document
       .getElementById("iniciar-competencia")
-      .addEventListener("click", () => this.iniciarCompetencia());
+      .addEventListener("click", () => {
+        this.iniciarCompetenciaRapida();
+        document.getElementById("iniciar").disabled = true;
+      });
+
+    document.getElementById("iniciar").addEventListener("click", () => {
+      this.iniciarCompetencia();
+      document.getElementById("iniciar-competencia").disabled = true;
+    });
+
+    document
+      .getElementById("reestablecer-btn")
+      .addEventListener("click", () => {
+        this.reestablecerCompetencia();
+      });
   }
 
   mostrarSeccion(seccion) {
@@ -153,6 +189,22 @@ class Triatlon {
     this.actualizarEstadoBotones();
   }
 
+  llenadoAutomaticoAsistencia() {
+    this.asistentes = this.participantes;
+    this.actualizarTablasAsistencia();
+    document.getElementById("buscar-cedula").value = "";
+    this.actualizarEstadoBotones();
+  }
+
+  removerAutomaticoAsistencia() {
+    if (this.asistentes.length < 1) {
+      alert("No hay asistentes para remover");
+      return;
+    }
+    this.asistentes = [];
+    this.actualizarTablasAsistencia();
+    this.actualizarEstadoBotones();
+  }
   actualizarTablasAsistencia() {
     // Actualizar tabla de por asistir
     const porAsistir = this.participantes.filter(
@@ -186,12 +238,26 @@ class Triatlon {
       tbodyAsistentes.appendChild(tr);
     });
   }
-  iniciarCompetencia() {
+  iniciarCompetenciaRapida() {
     if (this.asistentes.length < 2) {
       alert("No hay participantes presentes para iniciar la competencia");
       return;
     }
     const horaInicio = document.getElementById("hora-inicio").value;
+    if (horaInicio.length === 5) {
+      alert("Formato inválido. Debe ser HH:MM:SS (ej: 09:30:15)");
+      return;
+    }
+    // Validar formato de hora (HH:MM o HH:MM:SS sin caracteres extra)
+    if (
+      !/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/.test(
+        horaInicio.trim()
+      )
+    ) {
+      alert("Formato inválido. Debe ser HH:MM:SS (ej: 09:30:15)");
+      return;
+    }
+
     if (!horaInicio) {
       alert("Por favor ingrese la hora de inicio");
       return;
@@ -206,17 +272,17 @@ class Triatlon {
     );
 
     /* this.competidores = this.participantes.map((p) => ({
-      ...p,
-      distanciaActual: 0,
-      distanciaTotal: 0,
-      etapa: "CAMINATA",
-      tiempos: {
-        CAMINATA: { inicio: horaInicio, fin: null },
-        NATACION: { inicio: null, fin: null },
-        CICLISMO: { inicio: null, fin: null },
-      },
-      descalificado: false,
-    })); */
+          ...p,
+          distanciaActual: 0,
+          distanciaTotal: 0,
+          etapa: "CAMINATA",
+          tiempos: {
+            CAMINATA: { inicio: horaInicio, fin: null },
+            NATACION: { inicio: null, fin: null },
+            CICLISMO: { inicio: null, fin: null },
+          },
+          descalificado: false,
+        })); */
 
     this.competidores = this.asistentes.map((p) => ({
       ...p,
@@ -229,6 +295,78 @@ class Triatlon {
         CICLISMO: { inicio: null, fin: null },
       },
       descalificado: false,
+    }));
+
+    this.etapaActual = "CAMINATA";
+    this.iniciarSimulacion();
+  }
+
+  iniciarCompetencia() {
+    if (this.asistentes.length < 2) {
+      alert("No hay participantes presentes para iniciar la competencia");
+      return;
+    }
+
+    const horaInicio = document.getElementById("hora-inicio").value;
+
+    if (horaInicio.length === 5) {
+      alert("Formato inválido. Debe ser HH:MM:SS (ej: 09:30:15)");
+      return;
+    }
+    // Validar formato de hora (HH:MM o HH:MM:SS sin caracteres extra)
+    if (
+      !/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/.test(
+        horaInicio.trim()
+      )
+    ) {
+      alert("Formato inválido. Debe ser HH:MM:SS (ej: 09:30:15)");
+      return;
+    }
+
+    if (!horaInicio) {
+      alert("Por favor ingrese la hora de inicio");
+      return;
+    }
+
+    this.tiempoActual = new Date();
+    const [horas, minutos, segundos] = horaInicio.split(":");
+    this.tiempoActual.setHours(
+      parseInt(horas),
+      parseInt(minutos),
+      parseInt(segundos)
+    );
+
+    this.simulacionRapida = true;
+    CONFIG.INTERVALO_ACTUALIZACION = 1000; // 1 segundo
+    // Calcular el número de intervalos para 10 minutos (600 segundos)
+    const tiempoTotalSimulacion = 600; // 10 minutos en segundos
+    const numIntervalos = tiempoTotalSimulacion; // Un intervalo por segundo
+
+    // Dividir el tiempo total entre las etapas (aproximadamente igual)
+    const tiempoPorEtapa = numIntervalos / 3; // Aproximadamente 200 segundos por etapa
+
+    // Calcular velocidades requeridas para cumplir el tiempo exacto
+    const distancias = CONFIG.DISTANCIAS;
+    CONFIG.VELOCIDADES = {
+      CAMINATA: (distancias.CAMINATA * 3600) / tiempoPorEtapa,
+      NATACION: (distancias.NATACION * 3600) / tiempoPorEtapa,
+      CICLISMO: (distancias.CICLISMO * 3600) / tiempoPorEtapa,
+    };
+
+    this.competidores = this.asistentes.map((p) => ({
+      ...p,
+      distanciaActual: 0,
+      distanciaTotal: 0,
+      etapa: "CAMINATA",
+      tiempos: {
+        CAMINATA: { inicio: "00:00:00", fin: null },
+        NATACION: { inicio: null, fin: null },
+        CICLISMO: { inicio: null, fin: null },
+      },
+      descalificado: false,
+      // Añadi una propiedad para la variación de velocidad individual
+      variacionVelocidad: 1 + (Math.random() - 0.5) * 0.5, // Variación entre 0.75 y 1.25 (±25%)
+      incrementoDistancia: 0, // Inicializar el incremento de distancia
     }));
 
     this.etapaActual = "CAMINATA";
@@ -258,8 +396,8 @@ class Triatlon {
     this.competidores.forEach((competidor) => {
       if (competidor.descalificado || competidor.etapa === "FINALIZADO") return;
 
-      // Verificación de descalificación (1.5%)
-      if (Math.random() < 0.015) {
+      // Verificación de descalificación, el numero de comparacion para evitar que se descalifiquen muy rapido los competidores debe ser muy bajo y si quieres mostrar lo contrario aumentalo por lo menos a 0.015
+      if (Math.random() < 0.00015) {
         competidor.descalificado = true;
         // Registrar tiempo de descalificación
         competidor.tiempos[competidor.etapa].fin = this.formatearHora(
@@ -268,9 +406,21 @@ class Triatlon {
         return;
       }
 
-      const velocidadBase = CONFIG.VELOCIDADES[competidor.etapa];
-      const maxDistanciaPorIntervalo = (velocidadBase * 1000) / 3600; // Máximo teórico por segundo que si son 7k por hora estariamos convirtiendolo en metros/segundos por lo que tendriamos que serian 7000/3600 en la primera etapa de la competencia
-      const distanciaRecorrida = Math.random() * maxDistanciaPorIntervalo; // Entre 0 y máximo posible
+      let distanciaRecorrida = 0;
+
+      if (this.simulacionRapida) {
+        // Asegurar que la distancia recorrida sea un valor pequeño
+        const incrementoBase = 0.0001; // Incremento base de 0.01 km (10 metros)
+        const velocidadBase = CONFIG.VELOCIDADES[competidor.etapa];
+
+        // Limitar la distancia recorrida a un valor máximo
+        distanciaRecorrida = incrementoBase * velocidadBase * Math.random();
+      } else {
+        //Aqui obtenemos el valor de las velocidades dentro del archivo config.js
+        const velocidadBase = CONFIG.VELOCIDADES[competidor.etapa];
+        const maxDistanciaPorIntervalo = velocidadBase * 0.1 - 0.455; // Máximo teórico por segundo
+        distanciaRecorrida = Math.random() * maxDistanciaPorIntervalo; // Entre 0 y máximo posible
+      }
 
       competidor.distanciaActual += distanciaRecorrida;
 
@@ -290,6 +440,10 @@ class Triatlon {
     document.getElementById(
       "etapa-actual"
     ).textContent = `Etapa actual: ${this.etapaActual}`;
+
+    //Se para la simulacion si queda solo 1 participante que no este descalificado
+
+    this.finalizarCompetencia();
   }
 
   finalizarEtapa(competidor) {
@@ -315,8 +469,86 @@ class Triatlon {
 
     competidor.distanciaActual = 0;
     this.actualizarTablaCompetencia(); // Actualización inmediata
+    if (this.simulacionRapida) {
+      // Restaurar velocidades originales al cambiar de etapa
+      CONFIG.VELOCIDADES = {
+        CAMINATA: 7,
+        NATACION: 6.192,
+        CICLISMO: 45,
+      };
+    }
   }
 
+  finalizarCompetencia() {
+    // --- LÓGICA PARA DETENER LA SIMULACIÓN CON UN GANADOR ---
+
+    // Buscamos todos los competidores que han FINALIZADO la carrera
+    const finishedCompetitors = this.competidores.filter(
+      (c) => c.etapa === "FINALIZADO"
+    );
+
+    // Buscamos todos aquellos competidores que NO se encuentran descalificados y que NO hayan terminado
+    const activeCompetitors = this.competidores.filter(
+      (c) => !c.descalificado && c.etapa !== "FINALIZADO"
+    );
+    const descalifiedCompetitors = this.competidores.filter(
+      (c) => c.descalificado
+    );
+
+    // Caso 1: Alguien ha finalizado la carrera
+    if (finishedCompetitors.length > 0) {
+      //clearInterval(this.intervaloID); // Detener la simulación
+      this.etapaActual = "FINALIZADO";
+
+      // Determinar el ganador: el primero en finalizar
+      const ganador = finishedCompetitors.sort((a, b) => {
+        const tiempoFinA = new Date(`1970-01-01T${a.tiempos.CICLISMO.fin}`);
+        const tiempoFinB = new Date(`1970-01-01T${b.tiempos.CICLISMO.fin}`);
+        return tiempoFinA - tiempoFinB;
+      })[0]; // El primero después de ordenar por tiempo de finalización
+
+      document.getElementById(
+        "etapa-actual"
+      ).textContent = `¡Competencia FINALIZADA! Ganador: 🏆 ${ganador.nombre}`;
+      this.actualizarTablaCompetencia();
+    }
+    // Caso 2: Si no hay ganadores aún, pero solo queda 1 competidor activo y al menos hubo asistentes al inicio (para evitar que con 1 solo asistente se termine de inmediato)
+    else if (activeCompetitors.length <= 1 && this.asistentes.length > 1) {
+      if (activeCompetitors.length === 1) {
+        //clearInterval(this.intervaloID); // Detener la simulación
+        this.etapaActual = "FINALIZADO";
+        document.getElementById(
+          "etapa-actual"
+        ).textContent = `¡Competencia FINALIZADA! Ganador Potencial (Único Activo): ${activeCompetitors[0].nombre} - Esperando Finalización o Descalificación`;
+        this.actualizarTablaCompetencia();
+      } else if (
+        activeCompetitors.length === 0 &&
+        finishedCompetitors.length === 0 &&
+        descalifiedCompetitors.length > 0
+      ) {
+        //clearInterval(this.intervaloID); // Detener la simulación
+        this.etapaActual = "FINALIZADO";
+        document.getElementById(
+          "etapa-actual"
+        ).textContent = `¡Competencia FINALIZADA! Sin Ganadores - Todos Descalificados o No Finalizaron`;
+        this.actualizarTablaCompetencia();
+      }
+    }
+  }
+  reestablecerCompetencia() {
+    //Borramos los valores del input
+    document.getElementById("hora-inicio").value = "";
+    //Borramos los registros de la tabla
+    const tbody = document.querySelector("#tabla-competencia tbody");
+    tbody.innerHTML = "";
+    //Volvemos a habiliar los botones si estaba alguno deshabilitado
+    document.getElementById("iniciar").disabled = false;
+    document.getElementById("iniciar-competencia").disabled = false;
+
+    //Borramos los valores que haya tenido el texto del reloj que se va actalizando
+    document.getElementById("reloj").textContent = "";
+    clearInterval(this.intervaloID);
+  }
   actualizarTablaCompetencia() {
     const tbody = document.querySelector("#tabla-competencia tbody");
     tbody.innerHTML = "";
@@ -374,11 +606,10 @@ class Triatlon {
           } - ${
         c.tiempos.NATACION.fin ||
         (c.descalificado && c.etapa === "NATACION" ? horaActual : "...")
-      }</td>
-          <td>${
-            c.tiempos.CICLISMO.inicio ||
-            (c.etapa === "CICLISMO" ? horaActual : "...")
-          } - ${
+      }</td>          <td>${
+        c.tiempos.CICLISMO.inicio ||
+        (c.etapa === "CICLISMO" ? horaActual : "...")
+      } - ${
         c.tiempos.CICLISMO.fin ||
         (c.descalificado && c.etapa === "CICLISMO" ? horaActual : "...")
       }</td>

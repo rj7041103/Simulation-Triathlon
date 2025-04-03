@@ -64,6 +64,8 @@
                 <input type="text" id="buscar-cedula" placeholder="Ingrese la cédula" pattern="\d{8}" maxlength="8"
                     inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '')" required>
                 <button id="marcar-asistencia">Marcar Asistencia</button>
+                <button id="llenado-automatico">Marcar todos</button>
+                <button id="remover-automatico">Deshacer todo</button>
             </div>
             <div class="asistencia-tablas">
                 <div class="tabla-container">
@@ -99,10 +101,12 @@
 
         <section id="competencia">
             <div class="input-container">
-                <h2>Competencia en Curso</h2>
+                <h2 class="title-competition">Competencia en Curso</h2>
                 <div class="controles">
-                    <input type="time" id="hora-inicio" step="1" required>
-                    <button id="iniciar-competencia">Iniciar Competencia</button>
+                    <input type="text" id="hora-inicio" pattern="^([01]?\d|2[0-3]):[0-5]\d:[0-5]\d$" required>
+                    <button id="iniciar-competencia">Iniciar Simulacion Rapida</button>
+                    <button id="iniciar">Iniciar Simulacion</button>
+                    <button id="reestablecer-btn">Reestablecer</button>
                 </div>
             </div>
 

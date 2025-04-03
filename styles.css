@@ -239,3 +239,24 @@ tr:hover:not(.descalificado) td {
     margin-bottom: 15px;
 }
 
+#modo-rapido {
+    background-color: #27ae60;
+    margin-left: 1rem;
+}
+
+#modo-rapido:hover {
+    background-color: #219a52;
+}
+
+.controles {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+#iniciar-rapido {
+    background-color: #27ae60;
+}
+
+#iniciar-rapido:hover {
+    background-color: #219a52;
+}
